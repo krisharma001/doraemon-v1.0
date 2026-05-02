@@ -1,256 +1,905 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DORAEMON HUD - System Interface</title>
-    <style>
-        :root {
-            --glow-color: #00f2ff;
-            --bg-color: #0a0b10;
-            --panel-bg: rgba(16, 20, 30, 0.8);
-            --text-color: #00d4ff;
-            --accent-color: #ff0055;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DORAEMON — TACTICAL INTERFACE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;900&family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #00e5ff;
+    --primary-dim: rgba(0,229,255,0.15);
+    --primary-glow: rgba(0,229,255,0.4);
+    --accent: #ff1744;
+    --accent-dim: rgba(255,23,68,0.15);
+    --gold: #ffd740;
+    --gold-dim: rgba(255,215,64,0.15);
+    --green: #00e676;
+    --green-dim: rgba(0,230,118,0.12);
+    --bg: #040608;
+    --bg2: #070b0f;
+    --panel: rgba(6,14,22,0.92);
+    --border: rgba(0,229,255,0.22);
+    --border-hot: rgba(0,229,255,0.55);
+    --text: #c8f0ff;
+    --text-dim: rgba(200,240,255,0.45);
+    --font-hud: 'Orbitron', monospace;
+    --font-data: 'Share Tech Mono', monospace;
+    --font-body: 'Rajdhani', sans-serif;
+  }
 
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            overflow: hidden;
-            display: grid;
-            grid-template-columns: 300px 1fr 300px;
-            grid-template-rows: 100vh;
-            gap: 20px;
-            padding: 20px;
-            box-sizing: border-box;
-            background-image:
-                radial-gradient(circle at 50% 50%, rgba(0, 242, 255, 0.05) 0%, transparent 70%),
-                linear-gradient(rgba(0, 242, 255, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 242, 255, 0.02) 1px, transparent 1px);
-            background-size: 100% 100%, 50px 50px, 50px 50px;
-        }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
 
-        .panel {
-            background: var(--panel-bg);
-            border: 1px solid var(--glow-color);
-            box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
-            border-radius: 5px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            backdrop-filter: blur(10px);
-        }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    height: 100vh;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 280px 1fr 300px;
+    grid-template-rows: 56px 1fr 52px;
+    gap: 0;
+    background-image:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,229,255,0.06) 0%, transparent 70%),
+      repeating-linear-gradient(0deg, transparent, transparent 59px, rgba(0,229,255,0.025) 60px),
+      repeating-linear-gradient(90deg, transparent, transparent 59px, rgba(0,229,255,0.025) 60px);
+  }
 
-        .panel-header {
-            background: rgba(0, 242, 255, 0.2);
-            padding: 10px;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            border-bottom: 1px solid var(--glow-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+  /* ─── TOPBAR ─── */
+  #topbar {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(4,6,10,0.95);
+    backdrop-filter: blur(12px);
+    position: relative;
+    z-index: 10;
+  }
 
-        .panel-content {
-            padding: 15px;
-            flex-grow: 1;
-            overflow-y: auto;
-        }
+  .topbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
 
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            font-family: 'Courier New', Courier, monospace;
-        }
+  .logo {
+    font-family: var(--font-hud);
+    font-weight: 900;
+    font-size: 1.1rem;
+    letter-spacing: 0.18em;
+    color: var(--primary);
+    text-shadow: 0 0 20px var(--primary-glow), 0 0 40px rgba(0,229,255,0.2);
+  }
 
-        .progress-bar {
-            height: 4px;
-            background: rgba(0, 242, 255, 0.1);
-            width: 100%;
-            margin-top: 5px;
-            position: relative;
-        }
+  .logo span { color: var(--accent); }
 
-        .progress-fill {
-            height: 100%;
-            background: var(--glow-color);
-            box-shadow: 0 0 10px var(--glow-color);
-            transition: width 0.5s ease;
-        }
+  .status-badge {
+    font-family: var(--font-data);
+    font-size: 0.62rem;
+    padding: 3px 10px;
+    border: 1px solid var(--green);
+    color: var(--green);
+    letter-spacing: 0.15em;
+    position: relative;
+    overflow: hidden;
+  }
 
-        .log-entry {
-            font-size: 0.85rem;
-            margin-bottom: 8px;
-            border-left: 2px solid var(--glow-color);
-            padding-left: 8px;
-            animation: fadeIn 0.3s ease;
-        }
+  .status-badge::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0;
+    width: 3px; height: 100%;
+    background: var(--green);
+    animation: blink-bar 2s ease-in-out infinite;
+  }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateX(-10px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
+  @keyframes blink-bar { 0%,100%{opacity:1} 50%{opacity:0.2} }
 
-        .btn {
-            background: transparent;
-            border: 1px solid var(--glow-color);
-            color: var(--text-color);
-            padding: 8px 12px;
-            margin-bottom: 10px;
-            cursor: pointer;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            width: 100%;
-            transition: all 0.2s;
-        }
+  .topbar-center {
+    font-family: var(--font-data);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+    text-align: center;
+  }
 
-        .btn:hover {
-            background: var(--glow-color);
-            color: var(--bg-color);
-            box-shadow: 0 0 15px var(--glow-color);
-        }
+  #clock-main {
+    font-family: var(--font-hud);
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--primary);
+    letter-spacing: 0.08em;
+    text-shadow: 0 0 15px var(--primary-glow);
+  }
 
-        .reminder-item {
-            padding: 10px;
-            border: 1px solid rgba(0, 242, 255, 0.3);
-            margin-bottom: 10px;
-            font-size: 0.9rem;
-        }
+  #date-main {
+    font-family: var(--font-data);
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    margin-top: 1px;
+    letter-spacing: 0.12em;
+  }
 
-        .reminder-time {
-            font-size: 0.7rem;
-            color: rgba(0, 242, 255, 0.6);
-            display: block;
-        }
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
 
-        .pulse {
-            width: 10px;
-            height: 10px;
-            background: var(--glow-color);
-            border-radius: 50%;
-            display: inline-block;
-            animation: pulse 2s infinite;
-        }
+  .net-indicator {
+    font-family: var(--font-data);
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(0, 242, 255, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0); }
-        }
-    </style>
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); animation: blink-bar 1.5s infinite; }
+
+  /* ─── PANELS ─── */
+  .col { display: flex; flex-direction: column; gap: 0; overflow: hidden; }
+  #col-left { border-right: 1px solid var(--border); }
+  #col-right { border-left: 1px solid var(--border); }
+
+  .panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .panel + .panel { border-top: 1px solid var(--border); }
+
+  .panel-hdr {
+    font-family: var(--font-hud);
+    font-size: 0.58rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    color: var(--primary);
+    padding: 10px 16px 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0,229,255,0.03);
+    flex-shrink: 0;
+  }
+
+  .panel-hdr-accent { color: var(--text-dim); font-size: 0.55rem; font-family: var(--font-data); }
+
+  .panel-body {
+    padding: 14px 16px;
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-dim) transparent;
+  }
+
+  /* ─── CENTER MAIN ─── */
+  #col-center { position: relative; }
+
+  #main-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .main-hdr {
+    font-family: var(--font-hud);
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    color: var(--primary);
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0,229,255,0.02);
+    flex-shrink: 0;
+  }
+
+  /* ─── LOG FEED ─── */
+  #log-feed {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-dim) transparent;
+  }
+
+  .log-entry {
+    font-family: var(--font-data);
+    font-size: 0.75rem;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    opacity: 0;
+    animation: slide-in 0.35s ease forwards;
+    border-left: 2px solid transparent;
+    padding-left: 10px;
+    line-height: 1.5;
+  }
+
+  .log-entry.info  { border-color: var(--primary); color: var(--text); }
+  .log-entry.warn  { border-color: var(--gold); color: var(--gold); }
+  .log-entry.error { border-color: var(--accent); color: var(--accent); }
+  .log-entry.ok    { border-color: var(--green); color: var(--green); }
+  .log-entry.sys   { border-color: var(--text-dim); color: var(--text-dim); }
+
+  .log-ts {
+    color: var(--text-dim);
+    flex-shrink: 0;
+    font-size: 0.65rem;
+    margin-top: 1px;
+  }
+
+  @keyframes slide-in {
+    from { opacity: 0; transform: translateX(-12px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  /* ─── QUICK ACTIONS ─── */
+  #actions-bar {
+    padding: 14px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    background: rgba(4,6,10,0.8);
+    flex-shrink: 0;
+  }
+
+  .btn {
+    font-family: var(--font-hud);
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 8px 100%, 0 calc(100% - 8px));
+  }
+
+  .btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--primary-dim);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .btn:hover { border-color: var(--primary); color: var(--primary); text-shadow: 0 0 10px var(--primary-glow); }
+  .btn:hover::before { opacity: 1; }
+  .btn:active { transform: scale(0.97); }
+
+  .btn.red { border-color: rgba(255,23,68,0.4); }
+  .btn.red:hover { border-color: var(--accent); color: var(--accent); text-shadow: 0 0 10px rgba(255,23,68,0.6); }
+  .btn.red::before { background: var(--accent-dim); }
+
+  .btn.gold { border-color: rgba(255,215,64,0.3); }
+  .btn.gold:hover { border-color: var(--gold); color: var(--gold); text-shadow: 0 0 10px rgba(255,215,64,0.6); }
+  .btn.gold::before { background: var(--gold-dim); }
+
+  /* ─── SYSTEM STATS ─── */
+  .stat-block { margin-bottom: 18px; }
+
+  .stat-label {
+    font-family: var(--font-hud);
+    font-size: 0.55rem;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .stat-val { color: var(--primary); font-family: var(--font-data); }
+
+  .bar-track {
+    height: 3px;
+    background: rgba(0,229,255,0.08);
+    position: relative;
+    overflow: visible;
+  }
+
+  .bar-fill {
+    height: 100%;
+    background: var(--primary);
+    box-shadow: 0 0 8px var(--primary-glow);
+    transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+    position: relative;
+  }
+
+  .bar-fill::after {
+    content: '';
+    position: absolute;
+    right: -1px; top: -3px;
+    width: 3px; height: 9px;
+    background: white;
+    box-shadow: 0 0 6px var(--primary);
+  }
+
+  .bar-fill.warn { background: var(--gold); box-shadow: 0 0 8px rgba(255,215,64,0.5); }
+  .bar-fill.warn::after { box-shadow: 0 0 6px var(--gold); }
+  .bar-fill.danger { background: var(--accent); box-shadow: 0 0 8px rgba(255,23,68,0.5); }
+  .bar-fill.danger::after { box-shadow: 0 0 6px var(--accent); }
+
+  /* ─── NEWS FEED ─── */
+  .news-item {
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(0,229,255,0.08);
+    cursor: pointer;
+    transition: padding-left 0.2s;
+  }
+
+  .news-item:hover { padding-left: 6px; border-color: var(--border-hot); }
+
+  .news-src {
+    font-family: var(--font-hud);
+    font-size: 0.5rem;
+    letter-spacing: 0.15em;
+    color: var(--primary);
+    margin-bottom: 4px;
+    opacity: 0.7;
+  }
+
+  .news-title {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.4;
+  }
+
+  .news-time {
+    font-family: var(--font-data);
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+
+  .news-loading {
+    font-family: var(--font-data);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-align: center;
+    padding: 20px 0;
+    animation: blink-bar 1.5s infinite;
+  }
+
+  /* ─── REMINDERS ─── */
+  .reminder-item {
+    padding: 10px 12px;
+    border: 1px solid rgba(0,229,255,0.12);
+    margin-bottom: 8px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    transition: border-color 0.2s;
+  }
+
+  .reminder-item:hover { border-color: var(--primary); }
+
+  .reminder-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 8px var(--gold);
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+
+  .reminder-task {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.3;
+  }
+
+  .reminder-dt {
+    font-family: var(--font-data);
+    font-size: 0.62rem;
+    color: var(--text-dim);
+    margin-top: 3px;
+  }
+
+  /* ─── MEMORY VAULT ─── */
+  .memory-item {
+    font-family: var(--font-data);
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(0,229,255,0.05);
+    line-height: 1.4;
+  }
+
+  .memory-item::before { content: '◈ '; color: var(--primary); opacity: 0.5; }
+
+  /* ─── BOTTOMBAR ─── */
+  #bottombar {
+    grid-column: 1 / -1;
+    border-top: 1px solid var(--border);
+    background: rgba(4,6,10,0.98);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    font-family: var(--font-data);
+    font-size: 0.6rem;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+  }
+
+  .ticker-wrap { overflow: hidden; flex: 1; margin: 0 40px; }
+
+  #ticker {
+    white-space: nowrap;
+    animation: ticker-move 60s linear infinite;
+    color: var(--text-dim);
+  }
+
+  @keyframes ticker-move { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+
+  /* ─── RADAR ANIMATION ─── */
+  .radar-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px 0 10px;
+  }
+
+  .radar {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .radar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: conic-gradient(from 0deg, transparent 70%, var(--primary-dim) 100%);
+    animation: spin 3s linear infinite;
+  }
+
+  .radar::after {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 60%; height: 1px;
+    background: var(--primary);
+    transform-origin: left center;
+    animation: spin 3s linear infinite;
+    box-shadow: 0 0 6px var(--primary);
+  }
+
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .radar-cross {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .radar-cross::before, .radar-cross::after {
+    content: '';
+    position: absolute;
+    background: var(--border);
+  }
+  .radar-cross::before { width: 1px; height: 100%; }
+  .radar-cross::after  { width: 100%; height: 1px; }
+
+  /* ─── ALERTS ─── */
+  #alert-banner {
+    position: fixed;
+    top: 70px; left: 50%; transform: translateX(-50%);
+    background: rgba(255,23,68,0.1);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: var(--font-hud);
+    font-size: 0.62rem;
+    letter-spacing: 0.15em;
+    padding: 10px 24px;
+    z-index: 100;
+    display: none;
+    animation: pulse-alert 1s ease infinite;
+  }
+
+  @keyframes pulse-alert { 0%,100%{box-shadow:0 0 10px rgba(255,23,68,0.3)} 50%{box-shadow:0 0 25px rgba(255,23,68,0.7)} }
+
+  /* ─── SCROLL BARS ─── */
+  ::-webkit-scrollbar { width: 3px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--primary-dim); border-radius: 2px; }
+</style>
 </head>
 <body>
 
-    <!-- Left Panel: System Stats -->
-    <div class="panel">
-        <div class="panel-header">
-            <span>System Core</span>
-            <div class="pulse"></div>
-        </div>
-        <div class="panel-content">
-            <div class="stat-row">
-                <span>CPU LOAD</span>
-                <span id="cpu-val">0%</span>
-            </div>
-            <div class="progress-bar"><div id="cpu-bar" class="progress-fill" style="width: 0%"></div></div>
+<!-- Alert Banner -->
+<div id="alert-banner">⚠ SYSTEM ALERT: HIGH RESOURCE USAGE DETECTED</div>
 
-            <div class="stat-row" style="margin-top: 20px;">
-                <span>RAM USAGE</span>
-                <span id="ram-val">0%</span>
-            </div>
-            <div class="progress-bar"><div id="ram-bar" class="progress-fill" style="width: 0%"></div></div>
+<!-- TOP BAR -->
+<div id="topbar">
+  <div class="topbar-left">
+    <div class="logo">DORA<span>EMO</span>N</div>
+    <div class="status-badge">ONLINE</div>
+  </div>
+  <div class="topbar-center">
+    <div id="clock-main">00:00:00</div>
+    <div id="date-main">SATURDAY, JANUARY 01, 2026</div>
+  </div>
+  <div class="topbar-right">
+    <div class="net-indicator"><div class="dot"></div> NET LINK ACTIVE</div>
+    <div class="net-indicator" style="color:var(--primary);font-family:var(--font-hud);font-size:0.58rem;letter-spacing:0.1em;">
+      SIR KRISH SHARMA
+    </div>
+  </div>
+</div>
 
-            <div class="stat-row" style="margin-top: 20px;">
-                <span>BATTERY</span>
-                <span id="bat-val">0%</span>
-            </div>
-            <div class="progress-bar"><div id="bat-bar" class="progress-fill" style="width: 0%"></div></div>
+<!-- LEFT COLUMN -->
+<div class="col" id="col-left">
 
-            <div style="margin-top: 40px;">
-                <div class="panel-header" style="background: transparent; border: none; padding: 0 0 10px 0;">Quick Actions</div>
-                <button class="btn" onclick="action('news')">Fetch News Brief</button>
-                <button class="btn" onclick="action('weather')">Check Weather</button>
-                <button class="btn" onclick="action('screenshot')">Take Screenshot</button>
-                <button class="btn" onclick="action('diagnostics')">Run Diagnostics</button>
-            </div>
-        </div>
+  <!-- System Stats -->
+  <div class="panel" style="flex:1.2">
+    <div class="panel-hdr">
+      SYSTEM CORE
+      <span class="panel-hdr-accent" id="refresh-ts">LIVE</span>
+    </div>
+    <div class="panel-body">
+      <div class="radar-wrap">
+        <div class="radar"><div class="radar-cross"></div></div>
+      </div>
+
+      <div class="stat-block" style="margin-top:16px">
+        <div class="stat-label">CPU LOAD <span class="stat-val" id="cpu-val">—</span></div>
+        <div class="bar-track"><div id="cpu-bar" class="bar-fill" style="width:0%"></div></div>
+      </div>
+
+      <div class="stat-block">
+        <div class="stat-label">RAM USAGE <span class="stat-val" id="ram-val">—</span></div>
+        <div class="bar-track"><div id="ram-bar" class="bar-fill" style="width:0%"></div></div>
+      </div>
+
+      <div class="stat-block">
+        <div class="stat-label">BATTERY <span class="stat-val" id="bat-val">—</span></div>
+        <div class="bar-track"><div id="bat-bar" class="bar-fill" style="width:0%"></div></div>
+      </div>
+
+      <div class="stat-block">
+        <div class="stat-label">DISK USAGE <span class="stat-val" id="disk-val">—</span></div>
+        <div class="bar-track"><div id="disk-bar" class="bar-fill" style="width:0%"></div></div>
+      </div>
+
+      <div style="margin-top:14px; font-family:var(--font-data); font-size:0.62rem; color:var(--text-dim); line-height:2;">
+        <div>UPTIME &nbsp;&nbsp;: <span id="uptime-val" style="color:var(--primary)">—</span></div>
+        <div>NETWORK : <span id="net-val" style="color:var(--green)">ACTIVE</span></div>
+        <div>SESSION : <span id="session-dur" style="color:var(--gold)">00:00:00</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Memory Vault -->
+  <div class="panel" style="flex:0.8">
+    <div class="panel-hdr">MEMORY VAULT <span class="panel-hdr-accent">MEM0</span></div>
+    <div class="panel-body" id="memory-list">
+      <div class="memory-item">User prefers IST timezone</div>
+      <div class="memory-item">Location: India</div>
+      <div class="memory-item">Interested in AI agents</div>
+      <div class="memory-item">Prefers dark interfaces</div>
+      <div class="memory-item">Uses Gmail for communication</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- CENTER COLUMN -->
+<div class="col" id="col-center">
+  <div id="main-panel">
+    <div class="main-hdr">
+      <span>TACTICAL OPERATIONS LOG</span>
+      <span style="font-family:var(--font-data);font-size:0.62rem;color:var(--text-dim)">
+        ENTRIES: <span id="log-count">0</span>
+      </span>
     </div>
 
-    <!-- Center Panel: Main HUD -->
-    <div class="panel" style="border-width: 2px;">
-        <div class="panel-header">
-            <span>DORAEMON Interface</span>
-            <span id="clock">00:00:00</span>
-        </div>
-        <div class="panel-content" id="main-log">
-            <div class="log-entry">Initializing System...</div>
-            <div class="log-entry">Establishing Neural Link...</div>
-            <div class="log-entry">All systems nominal. Welcome, Sir.</div>
-        </div>
+    <div id="log-feed">
+      <!-- Log entries injected by JS -->
     </div>
 
-    <!-- Right Panel: Logistics -->
-    <div class="panel">
-        <div class="panel-header">Logistics & Tasks</div>
-        <div class="panel-content">
-            <div id="reminders-list">
-                <div class="reminder-item">
-                    <span class="reminder-time">08:00 AM</span>
-                    Morning Briefing
-                </div>
-                <div class="reminder-item">
-                    <span class="reminder-time">10:30 AM</span>
-                    Project Sync
-                </div>
-            </div>
-            <div style="margin-top: 20px;">
-                <div class="panel-header" style="background: transparent; border: none; padding: 0 0 10px 0;">Memories</div>
-                <div id="memory-vault" style="font-size: 0.8rem; opacity: 0.8;">
-                    - User prefers dark mode<br>
-                    - Interested in AI agents<br>
-                    - Location: India
-                </div>
-            </div>
-        </div>
+    <div id="actions-bar">
+      <button class="btn" onclick="triggerAction('news')">◈ NEWS BRIEF</button>
+      <button class="btn" onclick="triggerAction('weather')">◈ WEATHER</button>
+      <button class="btn" onclick="triggerAction('screenshot')">◈ SCREENSHOT</button>
+      <button class="btn gold" onclick="triggerAction('diagnostics')">◈ DIAGNOSTICS</button>
+      <button class="btn gold" onclick="triggerAction('reminders')">◈ REMINDERS</button>
+      <button class="btn red" onclick="triggerAction('alert')">◈ PRIORITY ALERT</button>
+      <button class="btn" onclick="clearLog()">◈ CLEAR LOG</button>
     </div>
+  </div>
+</div>
 
-    <script>
-        function updateClock() {
-            const now = new Date();
-            document.getElementById('clock').innerText = now.toLocaleTimeString();
-        }
-        setInterval(updateClock, 1000);
-        updateClock();
+<!-- RIGHT COLUMN -->
+<div class="col" id="col-right">
 
-        function action(type) {
-            const log = document.getElementById('main-log');
-            const entry = document.createElement('div');
-            entry.className = 'log-entry';
-            entry.innerText = `Triggering command: ${type}...`;
-            log.prepend(entry);
+  <!-- News Feed -->
+  <div class="panel" style="flex:1.4">
+    <div class="panel-hdr">
+      GLOBAL INTEL FEED
+      <span class="panel-hdr-accent" id="news-ts">FETCHING...</span>
+    </div>
+    <div class="panel-body" id="news-list">
+      <div class="news-loading">ESTABLISHING FEED CONNECTION...</div>
+    </div>
+  </div>
 
-            // In a real world scenario, this would fetch from a backend API
-            console.log(`Action triggered: ${type}`);
-        }
+  <!-- Reminders -->
+  <div class="panel" style="flex:1">
+    <div class="panel-hdr">
+      MISSION SCHEDULE
+      <span class="panel-hdr-accent" id="reminder-count">0 ACTIVE</span>
+    </div>
+    <div class="panel-body" id="reminder-list">
+      <div class="news-loading">LOADING SCHEDULE...</div>
+    </div>
+  </div>
 
-        // Mock data updates
-        setInterval(() => {
-            const cpu = Math.floor(Math.random() * 30) + 10;
-            const ram = Math.floor(Math.random() * 20) + 40;
-            const bat = Math.floor(Math.random() * 5) + 80;
+</div>
 
-            document.getElementById('cpu-val').innerText = cpu + '%';
-            document.getElementById('cpu-bar').style.width = cpu + '%';
-            document.getElementById('ram-val').innerText = ram + '%';
-            document.getElementById('ram-bar').style.width = ram + '%';
-            document.getElementById('bat-val').innerText = bat + '%';
-            document.getElementById('bat-bar').style.width = bat + '%';
-        }, 3000);
-    </script>
+<!-- BOTTOM BAR -->
+<div id="bottombar">
+  <span style="color:var(--primary);letter-spacing:0.15em;">DORAEMON v2.0</span>
+  <div class="ticker-wrap">
+    <div id="ticker">
+      ◈ ALL SYSTEMS NOMINAL &nbsp;&nbsp;◈ NEURAL LINK ESTABLISHED &nbsp;&nbsp;◈ MEMORY VAULT ONLINE &nbsp;&nbsp;◈ PROACTIVE ENGINE ACTIVE &nbsp;&nbsp;◈ AWAITING DIRECTIVE, SIR &nbsp;&nbsp;
+    </div>
+  </div>
+  <span id="build-info" style="color:var(--text-dim)">BUILD 2026.05.02</span>
+</div>
+
+<script>
+  // ─── CLOCK ───
+  function updateClock() {
+    const now = new Date();
+    const time = now.toLocaleTimeString('en-IN', { hour12: false });
+    const date = now.toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' }).toUpperCase();
+    document.getElementById('clock-main').textContent = time;
+    document.getElementById('date-main').textContent = date;
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
+
+  // ─── SESSION TIMER ───
+  const sessionStart = Date.now();
+  function updateSessionDur() {
+    const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+    const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+    const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+    const s = String(elapsed % 60).padStart(2, '0');
+    document.getElementById('session-dur').textContent = `${h}:${m}:${s}`;
+  }
+  setInterval(updateSessionDur, 1000);
+
+  // ─── LOG SYSTEM ───
+  let logCount = 0;
+  const LOG_LIMIT = 80;
+
+  function addLog(message, type = 'info') {
+    const feed = document.getElementById('log-feed');
+    const now = new Date().toLocaleTimeString('en-IN', { hour12: false });
+    const entry = document.createElement('div');
+    entry.className = `log-entry ${type}`;
+    entry.innerHTML = `<span class="log-ts">${now}</span><span>${message}</span>`;
+    feed.prepend(entry);
+    logCount++;
+    document.getElementById('log-count').textContent = logCount;
+
+    // Cap log entries
+    const entries = feed.querySelectorAll('.log-entry');
+    if (entries.length > LOG_LIMIT) entries[entries.length - 1].remove();
+  }
+
+  function clearLog() {
+    document.getElementById('log-feed').innerHTML = '';
+    logCount = 0;
+    document.getElementById('log-count').textContent = 0;
+    addLog('Log cleared by operator.', 'sys');
+  }
+
+  // Boot sequence
+  const BOOT_MSGS = [
+    ['Initializing DORAEMON tactical interface...', 'sys'],
+    ['Neural link established.', 'ok'],
+    ['Loading memory vault from mem0...', 'sys'],
+    ['Proactive intelligence engine: ACTIVE', 'ok'],
+    ['Noise cancellation: BVC online.', 'ok'],
+    ['All systems nominal. Standing by, Sir.', 'ok'],
+  ];
+
+  BOOT_MSGS.forEach(([msg, type], i) => {
+    setTimeout(() => addLog(msg, type), (i + 1) * 400);
+  });
+
+  // ─── QUICK ACTIONS ───
+  const ACTION_RESPONSES = {
+    news:        ['Fetching global intelligence feed...', 'Parsing RSS sources: BBC, Reuters, Al Jazeera...', 'News brief ready. Check the Intel Feed panel, Sir.'],
+    weather:     ['Querying wttr.in for local weather data...', 'Weather data retrieved for current location.'],
+    screenshot:  ['Initiating screen capture sequence...', 'Screenshot captured and saved with timestamp, Sir.'],
+    diagnostics: ['Running full system diagnostics...', 'CPU: nominal. RAM: nominal. Battery: nominal.', 'All systems green, Sir.'],
+    reminders:   ['Querying reminder database...', 'Schedule loaded. Check Mission Schedule panel.'],
+    alert:       ['⚠ PRIORITY ALERT TRIGGERED', 'Scanning for anomalies...', 'Alert acknowledged. Standing by for directive.'],
+  };
+
+  function triggerAction(type) {
+    const msgs = ACTION_RESPONSES[type] || ['Executing command...'];
+    msgs.forEach((msg, i) => {
+      setTimeout(() => {
+        addLog(msg, type === 'alert' ? 'warn' : 'info');
+      }, i * 600);
+    });
+
+    if (type === 'alert') {
+      const banner = document.getElementById('alert-banner');
+      banner.style.display = 'block';
+      setTimeout(() => banner.style.display = 'none', 5000);
+    }
+
+    if (type === 'news') loadNews();
+    if (type === 'reminders') loadReminders();
+  }
+
+  // ─── SYSTEM STATS ───
+  let alertShown = false;
+
+  function updateStats() {
+    // In production, fetch from /api/stats endpoint served by your Python backend.
+    // This demo uses realistic simulated data.
+    const cpu = Math.floor(Math.random() * 35 + 10);
+    const ram = Math.floor(Math.random() * 25 + 38);
+    const bat = Math.floor(Math.random() * 8 + 74);
+    const disk = Math.floor(Math.random() * 5 + 52);
+
+    setBar('cpu', cpu);
+    setBar('ram', ram);
+    setBar('bat', bat);
+    setBar('disk', disk);
+
+    document.getElementById('uptime-val').textContent = getUptime();
+    document.getElementById('refresh-ts').textContent = new Date().toLocaleTimeString('en-IN', { hour12: false });
+
+    // High resource alert
+    if ((cpu > 85 || ram > 85) && !alertShown) {
+      alertShown = true;
+      addLog(`⚠ High resource usage — CPU: ${cpu}%, RAM: ${ram}%`, 'warn');
+      setTimeout(() => alertShown = false, 30000);
+    }
+  }
+
+  function setBar(id, val) {
+    const bar = document.getElementById(`${id}-bar`);
+    const label = document.getElementById(`${id}-val`);
+    bar.style.width = val + '%';
+    label.textContent = val + '%';
+    bar.className = 'bar-fill' + (val > 85 ? ' danger' : val > 65 ? ' warn' : '');
+  }
+
+  function getUptime() {
+    const secs = Math.floor((Date.now() - sessionStart) / 1000) + 3600;
+    const h = String(Math.floor(secs / 3600)).padStart(2, '0');
+    const m = String(Math.floor((secs % 3600) / 60)).padStart(2, '0');
+    return `${h}H ${m}M`;
+  }
+
+  setInterval(updateStats, 3000);
+  updateStats();
+
+  // ─── NEWS FEED ───
+  // In production, fetch from /api/news or your Python backend that calls fetch_news tool.
+  const DEMO_NEWS = [
+    { src: 'REUTERS', title: 'G7 leaders convene emergency summit on global trade policy', time: '2 min ago' },
+    { src: 'BBC WORLD', title: 'Tech giants face new AI regulation framework from EU Commission', time: '14 min ago' },
+    { src: 'AL JAZEERA', title: 'Middle East ceasefire talks enter critical final phase', time: '31 min ago' },
+    { src: 'GOOGLE NEWS', title: "India's GDP growth forecast revised upward by IMF for 2026", time: '45 min ago' },
+    { src: 'THE VERGE', title: 'OpenAI announces major model update with real-time reasoning', time: '1 hr ago' },
+    { src: 'REUTERS', title: 'Global markets rally as inflation data comes in below expectations', time: '2 hr ago' },
+  ];
+
+  function loadNews() {
+    const container = document.getElementById('news-list');
+    container.innerHTML = '<div class="news-loading">FETCHING INTELLIGENCE...</div>';
+    setTimeout(() => {
+      container.innerHTML = '';
+      DEMO_NEWS.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'news-item';
+        el.innerHTML = `
+          <div class="news-src">${item.src}</div>
+          <div class="news-title">${item.title}</div>
+          <div class="news-time">${item.time}</div>
+        `;
+        el.onclick = () => addLog(`Headline selected: "${item.title.substring(0, 50)}..."`, 'info');
+        container.appendChild(el);
+      });
+      const ts = new Date().toLocaleTimeString('en-IN', { hour12: false });
+      document.getElementById('news-ts').textContent = `UPDATED ${ts}`;
+      addLog(`Intel feed loaded — ${DEMO_NEWS.length} articles parsed.`, 'ok');
+    }, 1200);
+  }
+
+  // ─── REMINDERS ───
+  const DEMO_REMINDERS = [
+    { id: 1, task: 'Review AI agent codebase', dt: '2026-05-02 09:00' },
+    { id: 2, task: 'Push Doraemon v2 to production', dt: '2026-05-02 14:00' },
+    { id: 3, task: 'Evening system backup', dt: '2026-05-02 20:00' },
+  ];
+
+  function loadReminders() {
+    const container = document.getElementById('reminder-list');
+    container.innerHTML = '';
+    if (DEMO_REMINDERS.length === 0) {
+      container.innerHTML = '<div class="news-loading">NO ACTIVE REMINDERS</div>';
+      return;
+    }
+    DEMO_REMINDERS.forEach(r => {
+      const el = document.createElement('div');
+      el.className = 'reminder-item';
+      el.innerHTML = `
+        <div class="reminder-dot"></div>
+        <div>
+          <div class="reminder-task">${r.task}</div>
+          <div class="reminder-dt">${r.dt}</div>
+        </div>
+      `;
+      container.appendChild(el);
+    });
+    document.getElementById('reminder-count').textContent = `${DEMO_REMINDERS.length} ACTIVE`;
+  }
+
+  // ─── TICKER ───
+  function updateTicker() {
+    const now = new Date().toLocaleTimeString('en-IN', { hour12: false });
+    const items = [
+      `◈ ALL SYSTEMS NOMINAL`,
+      `◈ MEMORY VAULT: ${document.querySelectorAll('.memory-item').length} ENTRIES`,
+      `◈ INTEL FEED: ${DEMO_NEWS.length} ARTICLES LOADED`,
+      `◈ REMINDERS: ${DEMO_REMINDERS.length} ACTIVE`,
+      `◈ LAST SYNC: ${now}`,
+      `◈ STANDING BY, SIR`,
+    ];
+    document.getElementById('ticker').textContent = items.join('   ');
+  }
+
+  setInterval(updateTicker, 10000);
+
+  // ─── INIT ───
+  setTimeout(() => {
+    loadNews();
+    loadReminders();
+    updateTicker();
+    addLog('Dashboard fully operational.', 'ok');
+  }, 2500);
+</script>
 </body>
 </html>
