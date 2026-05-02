@@ -1,69 +1,49 @@
-import logging
+import json
 import os
+import logging
 from livekit.agents import function_tool, RunContext
-from mem0 import Memory
 
-# Initialize mem0 Memory
-# This will create a default local database if no config is provided
-memory = Memory()
+MEMORY_FILE = "db/memory.json"
+os.makedirs("db", exist_ok=True)
 
-@function_tool()
-async def remember_fact(
-    context: RunContext, # type: ignore
-    fact: str
-) -> str:
-    """
-    Remember a piece of information about Krish or his preferences.
-    """
-    try:
-        logging.info(f"Remembering fact: {fact}")
-        # mem0.add stores information into the long-term memory
-        memory.add(fact, user_id="Krish")
-        return "I've committed that to long-term memory, Sir."
-    except Exception as e:
-        logging.error(f"Remember fact failed: {e}")
-        return f"I had trouble remembering that: {str(e)}"
+def _load() -> dict:
+    if os.path.exists(MEMORY_FILE):
+        try:
+            return json.load(open(MEMORY_FILE))
+        except:
+            return {}
+    return {}
+
+def _save(data: dict):
+    json.dump(data, open(MEMORY_FILE, "w"), indent=2)
 
 @function_tool()
-async def recall_fact(
-    context: RunContext, # type: ignore
-    query: str
-) -> str:
-    """
-    Retrieve a stored fact or memory based on a query.
-    """
-    try:
-        logging.info(f"Recalling fact for query: {query}")
-        # mem0.search retrieves relevant memories
-        results = memory.search(query, user_id="Krish")
-        if not results:
-            return "I'm afraid I have no record of that, Sir."
-
-        # Combine memory strings
-        facts = [r['text'] for r in results]
-        return "My records indicate:\n" + "\n".join(facts)
-    except Exception as e:
-        logging.error(f"Recall fact failed: {e}")
-        return f"Error retrieving memory: {str(e)}"
+async def remember_fact(context: RunContext, key: str, value: str) -> str:  # type: ignore
+    """Remember a fact about Krish. key = short label, value = the information."""
+    data = _load()
+    data[key] = value
+    _save(data)
+    logging.info(f"Memory saved: {key} = {value}")
+    return f"Committed to memory, Sir: '{key}' → '{value}'"
 
 @function_tool()
-async def list_memories(
-    context: RunContext, # type: ignore
-) -> str:
-    """
-    List all stored memories for the user.
-    """
-    try:
-        # Using mem0's get_all if available or a manual search for common keywords
-        # Since mem0 provides search, we'll use a broad search as a workaround
-        memories = memory.get_all(user_id="Krish")
-        if not memories:
-            return "Your memory vault is currently empty, Sir."
+async def recall_fact(context: RunContext, key: str) -> str:  # type: ignore
+    """Recall a stored fact by its key."""
+    data = _load()
+    if key in data:
+        return f"On record, Sir: '{key}' → '{data[key]}'"
+    # Fuzzy match — check if key appears in any stored key
+    matches = {k: v for k, v in data.items() if key.lower() in k.lower()}
+    if matches:
+        result = "\n".join(f"  {k}: {v}" for k, v in matches.items())
+        return f"Closest matches, Sir:\n{result}"
+    return f"No record found for '{key}', Sir."
 
-        output = "Stored Memories, Sir:\n"
-        for i, m in enumerate(memories, 1):
-            output += f"{i}. {m.get('text', 'Unknown')}\n"
-        return output
-    except Exception as e:
-        logging.error(f"List memories failed: {e}")
-        return f"Error listing memories: {str(e)}"
+@function_tool()
+async def list_memories(context: RunContext) -> str:  # type: ignore
+    """List all stored memories."""
+    data = _load()
+    if not data:
+        return "Memory vault is empty, Sir."
+    lines = "\n".join(f"  {i+1}. {k}: {v}" for i, (k, v) in enumerate(data.items()))
+    return f"Memory vault ({len(data)} entries), Sir:\n{lines}"

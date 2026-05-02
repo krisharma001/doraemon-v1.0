@@ -7,10 +7,17 @@ from livekit.agents import function_tool, RunContext
 from typing import List, Optional
 
 # Initialize Reminder DB
+import os
 DB_PATH = "db/reminders.db"
+os.makedirs("db", exist_ok=True)
 db = sqlite_utils.Database(DB_PATH)
 if "reminders" not in db.table_names():
-    db["reminders"].create("id", "integer", "task", "text", "datetime", "text", "completed", "boolean", pk="id")
+    db["reminders"].create({
+        "id": int,
+        "task": str,
+        "datetime": str,
+        "completed": bool,
+    }, pk="id")
 
 @function_tool()
 async def create_file(
