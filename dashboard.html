@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DORAEMON HUD - System Interface</title>
+    <style>
+        :root {
+            --glow-color: #00f2ff;
+            --bg-color: #0a0b10;
+            --panel-bg: rgba(16, 20, 30, 0.8);
+            --text-color: #00d4ff;
+            --accent-color: #ff0055;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: 300px 1fr 300px;
+            grid-template-rows: 100vh;
+            gap: 20px;
+            padding: 20px;
+            box-sizing: border-box;
+            background-image:
+                radial-gradient(circle at 50% 50%, rgba(0, 242, 255, 0.05) 0%, transparent 70%),
+                linear-gradient(rgba(0, 242, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 242, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 50px 50px, 50px 50px;
+        }
+
+        .panel {
+            background: var(--panel-bg);
+            border: 1px solid var(--glow-color);
+            box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .panel-header {
+            background: rgba(0, 242, 255, 0.2);
+            padding: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid var(--glow-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-content {
+            padding: 15px;
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: rgba(0, 242, 255, 0.1);
+            width: 100%;
+            margin-top: 5px;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--glow-color);
+            box-shadow: 0 0 10px var(--glow-color);
+            transition: width 0.5s ease;
+        }
+
+        .log-entry {
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            border-left: 2px solid var(--glow-color);
+            padding-left: 8px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--glow-color);
+            color: var(--text-color);
+            padding: 8px 12px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            width: 100%;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: var(--glow-color);
+            color: var(--bg-color);
+            box-shadow: 0 0 15px var(--glow-color);
+        }
+
+        .reminder-item {
+            padding: 10px;
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .reminder-time {
+            font-size: 0.7rem;
+            color: rgba(0, 242, 255, 0.6);
+            display: block;
+        }
+
+        .pulse {
+            width: 10px;
+            height: 10px;
+            background: var(--glow-color);
+            border-radius: 50%;
+            display: inline-block;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 242, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 242, 255, 0); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Left Panel: System Stats -->
+    <div class="panel">
+        <div class="panel-header">
+            <span>System Core</span>
+            <div class="pulse"></div>
+        </div>
+        <div class="panel-content">
+            <div class="stat-row">
+                <span>CPU LOAD</span>
+                <span id="cpu-val">0%</span>
+            </div>
+            <div class="progress-bar"><div id="cpu-bar" class="progress-fill" style="width: 0%"></div></div>
+
+            <div class="stat-row" style="margin-top: 20px;">
+                <span>RAM USAGE</span>
+                <span id="ram-val">0%</span>
+            </div>
+            <div class="progress-bar"><div id="ram-bar" class="progress-fill" style="width: 0%"></div></div>
+
+            <div class="stat-row" style="margin-top: 20px;">
+                <span>BATTERY</span>
+                <span id="bat-val">0%</span>
+            </div>
+            <div class="progress-bar"><div id="bat-bar" class="progress-fill" style="width: 0%"></div></div>
+
+            <div style="margin-top: 40px;">
+                <div class="panel-header" style="background: transparent; border: none; padding: 0 0 10px 0;">Quick Actions</div>
+                <button class="btn" onclick="action('news')">Fetch News Brief</button>
+                <button class="btn" onclick="action('weather')">Check Weather</button>
+                <button class="btn" onclick="action('screenshot')">Take Screenshot</button>
+                <button class="btn" onclick="action('diagnostics')">Run Diagnostics</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Center Panel: Main HUD -->
+    <div class="panel" style="border-width: 2px;">
+        <div class="panel-header">
+            <span>DORAEMON Interface</span>
+            <span id="clock">00:00:00</span>
+        </div>
+        <div class="panel-content" id="main-log">
+            <div class="log-entry">Initializing System...</div>
+            <div class="log-entry">Establishing Neural Link...</div>
+            <div class="log-entry">All systems nominal. Welcome, Sir.</div>
+        </div>
+    </div>
+
+    <!-- Right Panel: Logistics -->
+    <div class="panel">
+        <div class="panel-header">Logistics & Tasks</div>
+        <div class="panel-content">
+            <div id="reminders-list">
+                <div class="reminder-item">
+                    <span class="reminder-time">08:00 AM</span>
+                    Morning Briefing
+                </div>
+                <div class="reminder-item">
+                    <span class="reminder-time">10:30 AM</span>
+                    Project Sync
+                </div>
+            </div>
+            <div style="margin-top: 20px;">
+                <div class="panel-header" style="background: transparent; border: none; padding: 0 0 10px 0;">Memories</div>
+                <div id="memory-vault" style="font-size: 0.8rem; opacity: 0.8;">
+                    - User prefers dark mode<br>
+                    - Interested in AI agents<br>
+                    - Location: India
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateClock() {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toLocaleTimeString();
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function action(type) {
+            const log = document.getElementById('main-log');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerText = `Triggering command: ${type}...`;
+            log.prepend(entry);
+
+            // In a real world scenario, this would fetch from a backend API
+            console.log(`Action triggered: ${type}`);
+        }
+
+        // Mock data updates
+        setInterval(() => {
+            const cpu = Math.floor(Math.random() * 30) + 10;
+            const ram = Math.floor(Math.random() * 20) + 40;
+            const bat = Math.floor(Math.random() * 5) + 80;
+
+            document.getElementById('cpu-val').innerText = cpu + '%';
+            document.getElementById('cpu-bar').style.width = cpu + '%';
+            document.getElementById('ram-val').innerText = ram + '%';
+            document.getElementById('ram-bar').style.width = ram + '%';
+            document.getElementById('bat-val').innerText = bat + '%';
+            document.getElementById('bat-bar').style.width = bat + '%';
+        }, 3000);
+    </script>
+</body>
+</html>
