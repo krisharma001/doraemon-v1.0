@@ -10,7 +10,6 @@ from prompts import AGENT_INSTRUCTION, SESSION_INSTRUCTION
 from tools import get_weather, search_web, send_email
 load_dotenv()
 
-
 class Assistant(Agent):
     def __init__(self) -> None:
         super().__init__(
@@ -27,7 +26,6 @@ class Assistant(Agent):
 
         )
         
-
 
 async def entrypoint(ctx: agents.JobContext):
     session = AgentSession(

@@ -1,12 +1,14 @@
 import logging
 from livekit.agents import function_tool, RunContext
 import requests
-from langchain_community.tools import DuckDuckGoSearchRun
+from ddgs import DDGS
 import os
 import smtplib
 from email.mime.multipart import MIMEMultipart  
 from email.mime.text import MIMEText
 from typing import Optional
+import asyncio
+import time
 
 @function_tool()
 async def get_weather(
@@ -31,17 +33,85 @@ async def get_weather(
 @function_tool()
 async def search_web(
     context: RunContext,  # type: ignore
-    query: str) -> str:
+    query: str,
+    max_results: int = 5) -> str:
     """
     Search the web using DuckDuckGo.
+    
+    Args:
+        query: The search query string
+        max_results: Maximum number of results to return (default: 5)
     """
+    start_time = time.time()
+    
     try:
-        results = DuckDuckGoSearchRun().run(tool_input=query)
-        logging.info(f"Search results for '{query}': {results}")
-        return results
+        # Use DDGS for direct DuckDuckGo search
+        with DDGS() as ddgs:
+            # Perform the search
+            search_results = list(ddgs.text(query, max_results=max_results))
+            
+        if not search_results:
+            logging.warning(f"No search results found for query: '{query}'")
+            return f"No search results found for '{query}'. Try rephrasing your search or using different keywords."
+        
+        # Format the results
+        formatted_results = _format_search_results(search_results, query)
+        
+        # Log successful search
+        search_time = time.time() - start_time
+        logging.info(f"Search completed for '{query}': {len(search_results)} results in {search_time:.2f}s")
+        
+        return formatted_results
+        
     except Exception as e:
-        logging.error(f"Error searching the web for '{query}': {e}")
-        return f"An error occurred while searching the web for '{query}'."    
+        search_time = time.time() - start_time
+        error_msg = f"Error searching the web for '{query}': {str(e)}"
+        logging.error(f"{error_msg} (took {search_time:.2f}s)")
+        
+        # Provide helpful error message based on error type
+        if "timeout" in str(e).lower():
+            return f"Search request timed out for '{query}'. Please try again with a more specific query."
+        elif "network" in str(e).lower() or "connection" in str(e).lower():
+            return f"Network error while searching for '{query}'. Please check your internet connection and try again."
+        else:
+            return f"An error occurred while searching for '{query}'. Please try rephrasing your search query."
+
+
+def _format_search_results(results: list, query: str) -> str:
+    """
+    Format search results into a readable string.
+    
+    Args:
+        results: List of search result dictionaries
+        query: Original search query
+        
+    Returns:
+        Formatted string containing search results
+    """
+    if not results:
+        return f"No results found for '{query}'."
+    
+    formatted_output = f"Search results for '{query}':\n\n"
+    
+    for i, result in enumerate(results, 1):
+        title = result.get('title', 'No title')
+        url = result.get('href', 'No URL')
+        snippet = result.get('body', 'No description available')
+        
+        # Truncate snippet if too long
+        if len(snippet) > 200:
+            snippet = snippet[:197] + "..."
+        
+        formatted_output += f"{i}. **{title}**\n"
+        formatted_output += f"   {snippet}\n"
+        formatted_output += f"   Source: {url}\n\n"
+    
+    # Add summary
+    formatted_output += f"Found {len(results)} results. "
+    if len(results) >= 5:
+        formatted_output += "Try a more specific search for more targeted results."
+    
+    return formatted_output    
 
 @function_tool()    
 async def send_email(

@@ -6,7 +6,24 @@ livekit-plugins-noise-cancellation
 livekit-plugins-cartesia
 livekit-plugins-deepgram
 mem0ai
-duckduckgo-search
-langchain-community
+ddgs
 requests
 python-dotenv
+
+# macOS automation
+pyautogui
+pillow
+
+# New requirements for JARVIS upgrade
+pyaudio
+numpy
+pygame
+psutil
+pyperclip
+pywhatkit
+feedparser
+twilio
+apscheduler
+sqlite-utils
+requests-html
+beautifulsoup4
