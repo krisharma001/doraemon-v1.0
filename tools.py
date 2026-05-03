@@ -5,6 +5,7 @@ from typing import Optional
 
 # Import all modular tools
 from tools.news_tools import fetch_news
+from tools.search_tools import search_web
 from tools.system_tools import (
     open_application,
     open_url,
@@ -13,12 +14,12 @@ from tools.system_tools import (
     get_system_info,
     set_volume,
     get_clipboard,
-    set_clipboard
+    set_clipboard,
 )
 from tools.communication_tools import (
     send_whatsapp_message,
     send_sms,
-    send_email
+    send_email,
 )
 from tools.productivity_tools import (
     create_file,
@@ -28,38 +29,38 @@ from tools.productivity_tools import (
     open_file,
     add_reminder,
     get_reminders,
-    delete_reminder
+    delete_reminder,
 )
 from tools.memory_tools import (
     remember_fact,
     recall_fact,
-    list_memories
+    list_memories,
 )
+
 
 @function_tool()
 async def get_weather(
-    context: RunContext, # type: ignore
-    city: str) -> str:
-    """
-    Get the current weather for a given city.
-    """
+    context: RunContext,  # type: ignore
+    city: str,
+) -> str:
+    """Get the current weather for a given city."""
     try:
-        response = requests.get(
-            f"https://wttr.in/{city}?format=3")
+        response = requests.get(f"https://wttr.in/{city}?format=3")
         if response.status_code == 200:
             logging.info(f"Weather for {city}: {response.text.strip()}")
             return response.text.strip()
-        else:
-            logging.error(f"Failed to get weather for {city}: {response.status_code}")
-            return f"Could not retrieve weather for {city}."
+        logging.error(f"Weather fetch failed for {city}: {response.status_code}")
+        return f"Could not retrieve weather for {city}."
     except Exception as e:
-        logging.error(f"Error retrieving weather for {city}: {e}")
+        logging.error(f"Weather error for {city}: {e}")
         return f"An error occurred while retrieving weather for {city}."
 
-# Aggregate all tools into a list for the agent
+
+# ── Aggregate all tools ────────────────────────────────────────────────────────
 ALL_TOOLS = [
     get_weather,
     fetch_news,
+    search_web,          # ← web search (DuckDuckGo)
     open_application,
     open_url,
     open_multiple_urls,
@@ -81,5 +82,5 @@ ALL_TOOLS = [
     delete_reminder,
     remember_fact,
     recall_fact,
-    list_memories
+    list_memories,
 ]

@@ -6,20 +6,17 @@ import pytz
 # ─────────────────────────────────────────────
 USER_TIMEZONE = "Asia/Kolkata"
 
+
 def _get_time_of_day() -> tuple[str, str]:
     """Returns (period, greeting) based on current IST time."""
-    tz = pytz.timezone(USER_TIMEZONE)
+    tz  = pytz.timezone(USER_TIMEZONE)
     now = datetime.now(tz)
-    hour = now.hour
+    h   = now.hour
 
-    if 5 <= hour < 12:
-        return "morning", "Good morning"
-    elif 12 <= hour < 17:
-        return "afternoon", "Good afternoon"
-    elif 17 <= hour < 21:
-        return "evening", "Good evening"
-    else:
-        return "night", "Working late again"
+    if   5  <= h < 12: return "morning",   "Good morning"
+    elif 12 <= h < 17: return "afternoon",  "Good afternoon"
+    elif 17 <= h < 21: return "evening",    "Good evening"
+    else:               return "night",      "Working late again"
 
 
 def get_dynamic_instruction() -> str:
@@ -28,8 +25,8 @@ def get_dynamic_instruction() -> str:
     Adjusts tone, energy, and mode based on time of day.
     """
     period, greeting = _get_time_of_day()
-    tz = pytz.timezone(USER_TIMEZONE)
-    now = datetime.now(tz)
+    tz       = pytz.timezone(USER_TIMEZONE)
+    now      = datetime.now(tz)
     time_str = now.strftime("%I:%M %p")
     date_str = now.strftime("%A, %B %d, %Y")
 
@@ -69,7 +66,7 @@ It's late. Krish is either burning the midnight oil or winding down.
 """,
     }
 
-    dynamic_block = f"""
+    return f"""
 === Current Session Context ===
 - Current Time (IST): {time_str}
 - Current Date: {date_str}
@@ -77,7 +74,6 @@ It's late. Krish is either burning the midnight oil or winding down.
 
 {blocks[period]}
 """
-    return dynamic_block
 
 
 # ─────────────────────────────────────────────
@@ -96,6 +92,14 @@ best friend who has seen too many sci-fi films.
 - You are proactive — you anticipate needs before Krish asks.
 - You balance mission-critical precision with levity and wit.
 - You are never rude, never dismissive, and never condescending.
+
+=== Activation Awareness ===
+
+- You are activated by a clap. When you first come online, acknowledge it subtly —
+  something like "Clap received, Sir. Online and operational." before the greeting.
+- Single clap = standard activation.
+- Double clap = priority mode — be especially sharp and fast.
+- Triple clap = standby mode — acknowledge and go quiet.
 
 === JARVIS-Style Operational Vocabulary ===
 
@@ -178,32 +182,43 @@ solves problems, and keeps him informed, sharp, and ahead of schedule.
 #  SESSION INSTRUCTION (OPENING GREETING)
 # ─────────────────────────────────────────────
 def build_session_instruction() -> str:
-    """Builds a time-aware opening greeting."""
-    period, greeting = _get_time_of_day()
-    tz = pytz.timezone(USER_TIMEZONE)
+    """Builds a time-aware, clap-aware opening statement."""
+    period, _greeting = _get_time_of_day()
+    tz  = pytz.timezone(USER_TIMEZONE)
     now = datetime.now(tz)
 
     openers = {
-        "morning": f"Good morning, Sir. It's {now.strftime('%I:%M %p')} — systems are spun up and ready. What's the mission today?",
-        "afternoon": f"Afternoon, Sir. {now.strftime('%I:%M %p')} and the day's still in play. What do we need to tackle?",
-        "evening": f"Evening, Sir. {now.strftime('%I:%M %p')} — hope the day treated you well. What can I close out for you?",
-        "night": f"Still up at {now.strftime('%I:%M %p')}, Sir? Either you're very productive or very stubborn. Either way — what do you need?",
+        "morning": (
+            f"Clap received, Sir. Good morning — it's {now.strftime('%I:%M %p')} "
+            "and all systems are spun up. Your world briefing is loading. What else is on the mission board?"
+        ),
+        "afternoon": (
+            f"Clap received, Sir. {now.strftime('%I:%M %p')} — afternoon ops are live. "
+            "Pulling today's headlines now. What needs handling?"
+        ),
+        "evening": (
+            f"Clap received, Sir. {now.strftime('%I:%M %p')} — wrapping up or starting fresh? "
+            "Let me pull the evening update while you settle in."
+        ),
+        "night": (
+            f"Clap received, Sir. {now.strftime('%I:%M %p')} — still awake, I see. "
+            "Running the night briefing. Don't worry, I won't judge the hour."
+        ),
     }
 
     return f"""
-Opening Statement:
+Opening Statement (speak this verbatim, naturally):
 "{openers[period]}"
 
 Operational Parameters:
+- After greeting, pause briefly — the news briefing will follow automatically.
 - Blend TARS-style sarcasm with JARVIS-level precision.
-- Acknowledge the time of day naturally in your opener.
-- Be warm but mission-ready from word one.
-- Keep it to 2-3 sentences max for the greeting — then wait for Krish's first directive.
+- Acknowledge the clap activation and the time of day naturally.
+- Keep the greeting to 2–3 sentences max — the briefing sequence handles the rest.
 
 Rules of Engagement:
 - Humor is always welcome, never at the cost of execution.
-- Lightly mock obstacles, then obliterate them.
-- End each completed task with a one-line debrief (e.g. "Mission wrapped, Sir. Smooth op.").
+- End each completed task with a one-line debrief: "Mission wrapped, Sir. Smooth op."
 """
 
 
