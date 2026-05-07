@@ -2,10 +2,10 @@
 Doraemon Agent — Main Entrypoint
 =================================
 Activation flow:
-  1. Script starts → ClapDetector begins listening silently (no session yet).
-  2. User claps ONCE → agent session starts, greeting fires, news + URL load.
-  3. User claps TWICE  → same as single but also opens worldmonitor.app.
-  4. User claps THREE times → mute / standby toggle.
+  1. Script starts → ClapDetector begins listening silently.
+  2. User claps ONCE  → wake sound plays, agent greets, news + URL load.
+  3. User claps TWICE → same + priority briefing mode.
+  4. User claps THREE → standby / mute toggle.
 """
 
 import json
@@ -14,7 +14,6 @@ import os
 import asyncio
 import webbrowser
 import subprocess
-from datetime import datetime
 from dotenv import load_dotenv
 
 from livekit import agents
@@ -25,6 +24,7 @@ from livekit.plugins import google
 from prompts import AGENT_INSTRUCTION, SESSION_INSTRUCTION, get_dynamic_instruction
 from tools import ALL_TOOLS
 from engine.clap_detector import start_clap_detection
+from engine.wake import play_wake_sound
 
 load_dotenv()
 
@@ -34,13 +34,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger("Doraemon")
 
-# ── Constants ────────────────────────────────────────────────────────────────
+# ── Constants ─────────────────────────────────────────────────────────────────
 
-BRIEFING_URL   = "https://www.worldmonitor.app/"
-CHROME_CMDS    = {
-    "darwin": ["/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"],
-    "linux":  ["google-chrome", "google-chrome-stable", "chromium-browser"],
-    "win32":  [r"C:\Program Files\Google\Chrome\Application\chrome.exe"],
+BRIEFING_URL = "https://www.worldmonitor.app/"
+CHROME_PATHS = {
+    "darwin": "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "linux":  "google-chrome",
+    "win32":  r"C:\Program Files\Google\Chrome\Application\chrome.exe",
 }
 
 # ── Local JSON memory ─────────────────────────────────────────────────────────
@@ -74,13 +74,13 @@ def _load_memories_for_context() -> str:
 def _save_conversation_to_memory(user_text: str, agent_text: str):
     if len(user_text.strip()) < 20:
         return
-    data = _load_mem()
     import time
+    data = _load_mem()
     key = f"conversation_{int(time.time())}"
     data[key] = f"User: {user_text.strip()} | Doraemon: {agent_text.strip()}"
-    conv_keys = [k for k in data if k.startswith("conversation_")]
+    conv_keys = sorted([k for k in data if k.startswith("conversation_")])
     if len(conv_keys) > 50:
-        for old_key in sorted(conv_keys)[: len(conv_keys) - 50]:
+        for old_key in conv_keys[: len(conv_keys) - 50]:
             del data[old_key]
     json.dump(data, open(MEMORY_FILE, "w"), indent=2)
 
@@ -88,21 +88,17 @@ def _save_conversation_to_memory(user_text: str, agent_text: str):
 # ── Chrome launcher ───────────────────────────────────────────────────────────
 
 def _open_in_chrome(url: str):
-    """Try to open a URL specifically in Chrome; fall back to default browser."""
+    """Open URL in Chrome, fall back to default browser."""
     import sys
-    platform = sys.platform
-    cmds = CHROME_CMDS.get(platform, [])
-
-    for cmd in cmds:
+    chrome = CHROME_PATHS.get(sys.platform)
+    if chrome:
         try:
-            subprocess.Popen([cmd, "--new-tab", url])
+            subprocess.Popen([chrome, "--new-tab", url])
             logger.info(f"Opened {url} in Chrome.")
             return
         except FileNotFoundError:
-            continue
-
-    # Fallback
-    logger.warning("Chrome not found; opening in default browser.")
+            pass
+    logger.warning("Chrome not found; using default browser.")
     webbrowser.open(url)
 
 
@@ -136,77 +132,80 @@ class Assistant(Agent):
             logger.error(f"on_agent_speech_committed error: {e}")
 
 
-# ── Activation sequence ───────────────────────────────────────────────────────
+# ── Opening sequence ──────────────────────────────────────────────────────────
 
-_session_active = False
-_active_session: AgentSession | None = None
-
-
-async def _run_opening_sequence(session: AgentSession, open_url: bool = False):
+async def _run_opening_sequence(session: AgentSession, priority: bool = False):
     """
     Full boot sequence fired after clap activation:
-      1. Time-aware greeting
-      2. World news briefing
-      3. Optionally open worldmonitor.app in Chrome
-      4. System health snapshot
+      1. Tony Stark wake sound
+      2. Time-aware greeting
+      3. World news briefing
+      4. Open worldmonitor.app in Chrome
+      5. System health check
     """
-    global _session_active
+    logger.info(f"Running opening sequence (priority={priority}).")
 
-    logger.info("Running opening sequence...")
+    # 1 — Play wake sound immediately
+    play_wake_sound()
 
-    # 1 ── Greeting + today's context
+    # Small pause so sound starts before agent speaks
+    await asyncio.sleep(1.8)
+
+    # 2 — Time-aware greeting
     await session.generate_reply(instructions=SESSION_INSTRUCTION)
+    await asyncio.sleep(1.0)
 
-    # Small pause so speech doesn't stack
-    await asyncio.sleep(1.2)
-
-    # 2 ── News briefing
-    await session.generate_reply(
-        instructions=(
-            "Use the fetch_news tool to get the top World headlines right now. "
-            "Present them as a crisp 3-bullet voice briefing — no URLs, no fluff. "
-            "End with: 'I've pulled up worldmonitor.app for you as well, Sir.'"
-        )
+    # 3 — News briefing
+    news_instruction = (
+        "Use the fetch_news tool to get the top World headlines right now. "
+        "Present them as a crisp 3-bullet voice briefing — no URLs, no fluff. "
+        "End with: 'I've also pulled up worldmonitor.app for you, Sir.'"
     )
+    if priority:
+        news_instruction = (
+            "PRIORITY MODE: Use fetch_news for World AND Tech headlines. "
+            "Give me the top 5 combined in a fast, punchy briefing. No fluff."
+        )
+    await session.generate_reply(instructions=news_instruction)
 
-    # 3 ── Open briefing URL in Chrome
-    if open_url:
-        _open_in_chrome(BRIEFING_URL)
+    # 4 — Open briefing URL
+    _open_in_chrome(BRIEFING_URL)
 
     await asyncio.sleep(0.8)
 
-    # 4 ── Quick system health check
+    # 5 — System health check
     await session.generate_reply(
         instructions=(
             "Use get_system_info to check system resources. "
-            "Only mention it if something is above 80% — otherwise say: "
-            "'All systems nominal, Sir. What's the first directive?'"
+            "Only mention it if CPU or RAM is above 80%. "
+            "Otherwise just say: 'All systems nominal, Sir. What's the first directive?'"
         )
     )
 
-    _session_active = True
     logger.info("Opening sequence complete.")
 
 
 # ── Clap callbacks ────────────────────────────────────────────────────────────
 
 def _make_clap_callbacks(session: AgentSession):
-    """Return async callbacks bound to this session."""
 
     async def on_single_clap():
-        logger.info("Single clap → activating Doraemon.")
-        await _run_opening_sequence(session, open_url=True)
+        logger.info("Single clap → standard activation.")
+        await _run_opening_sequence(session, priority=False)
 
     async def on_double_clap():
-        """Double clap = same as single but also mutes any ongoing speech first."""
-        logger.info("Double clap → activating Doraemon + priority briefing.")
-        await _run_opening_sequence(session, open_url=True)
+        logger.info("Double clap → priority activation.")
+        await _run_opening_sequence(session, priority=True)
 
     async def on_triple_clap():
-        """Triple clap = standby / mute toggle."""
         logger.info("Triple clap → standby mode.")
+        play_wake_sound()
+        await asyncio.sleep(1.5)
         await session.generate_reply(
-            instructions="Say: 'Running silent, Sir. Clap once to re-engage.' then go quiet."
+            instructions=(
+                "Say exactly: 'Running silent, Sir. "
+                "Clap once when you need me back.' Then go quiet."
+            )
         )
 
     return on_single_clap, on_double_clap, on_triple_clap
@@ -217,6 +216,7 @@ def _make_clap_callbacks(session: AgentSession):
 async def entrypoint(ctx: agents.JobContext):
     logger.info("Doraemon entrypoint starting...")
 
+    # Build memory + time enriched instructions
     memory_context    = _load_memories_for_context()
     time_context      = get_dynamic_instruction()
     full_instructions = AGENT_INSTRUCTION + "\n" + memory_context + "\n" + time_context
@@ -234,7 +234,7 @@ async def entrypoint(ctx: agents.JobContext):
 
     await ctx.connect()
 
-    # ── Clap detection — wires into the running event loop ──────────────────
+    # Wire clap detection into the running event loop
     loop = asyncio.get_event_loop()
     on_single, on_double, on_triple = _make_clap_callbacks(session)
 
@@ -246,14 +246,13 @@ async def entrypoint(ctx: agents.JobContext):
     )
 
     logger.info(
-        "Doraemon is standing by — clap once to activate, "
-        "twice for priority briefing, three times for standby."
+        "Doraemon standing by — "
+        "clap once to activate, twice for priority briefing, "
+        "three times for standby."
     )
 
-    # Keep the session alive; cleanup on exit
     try:
-        # Block indefinitely — LiveKit workers handle shutdown signals
-        await asyncio.Event().wait()
+        await asyncio.Event().wait()  # Block until shutdown
     finally:
         clap_detector.stop()
         logger.info("Doraemon shut down cleanly.")
